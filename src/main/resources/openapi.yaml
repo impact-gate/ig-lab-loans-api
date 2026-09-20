@@ -1,0 +1,194 @@
+openapi: 3.0.3
+info:
+  title: Loans API
+  version: 1.0.0
+  description: Lending management, amortization schedules, and risk calculation
+paths:
+  /v1/loans:
+    get:
+      summary: List loans
+      responses:
+        '200':
+          description: List of loans
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [loans]
+                properties:
+                  loans:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Loan'
+    post:
+      summary: Apply for loan
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoanRequest'
+      responses:
+        '201':
+          description: Loan created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+
+  /v1/loans/{id}:
+    get:
+      summary: Get loan by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Loan details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+
+  /v1/loans/{id}/status:
+    put:
+      summary: Update loan status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { type: string, enum: [PENDING, APPROVED, DISBURSED, DEFAULTED, CLOSED] }
+      responses:
+        '200':
+          description: Updated status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+
+  /v1/loans/{id}/schedule:
+    get:
+      summary: Get amortization schedule
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Amortization schedule
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [loanId, installments]
+                properties:
+                  loanId: { type: string }
+                  installments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Installment'
+
+  /v1/customers/{id}:
+    get:
+      summary: Get customer loan profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Customer profile
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [customerId, creditScore, riskTier, activeLoanCount]
+                properties:
+                  customerId: { type: string }
+                  creditScore: { type: integer }
+                  riskTier: { type: string, enum: [LOW, MEDIUM, HIGH] }
+                  activeLoanCount: { type: integer }
+
+  /v1/rates:
+    get:
+      summary: Current interest rate tiers
+      responses:
+        '200':
+          description: Rate tiers
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [baseRateBps, tiers]
+                properties:
+                  baseRateBps: { type: integer }
+                  tiers:
+                    type: array
+                    items:
+                      type: object
+                      required: [tier, ratePercent]
+                      properties:
+                        tier: { type: string }
+                        ratePercent: { type: number }
+
+  /v1/applications:
+    post:
+      summary: Submit loan application
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLoanRequest'
+      responses:
+        '201':
+          description: Application approved or pending
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Loan'
+
+components:
+  schemas:
+    Loan:
+      type: object
+      required: [id, customerId, principalCents, interestRateBps, termMonths, status]
+      properties:
+        id: { type: string }
+        customerId: { type: string }
+        principalCents: { type: integer }
+        interestRateBps: { type: integer }
+        termMonths: { type: integer }
+        status: { type: string, enum: [PENDING, APPROVED, DISBURSED, DEFAULTED, CLOSED] }
+        monthlyPaymentCents: { type: integer }
+
+    CreateLoanRequest:
+      type: object
+      required: [customerId, principalCents, termMonths]
+      properties:
+        customerId: { type: string }
+        principalCents: { type: integer }
+        termMonths: { type: integer }
+
+    Installment:
+      type: object
+      required: [installmentNumber, dueDate, principalCents, interestCents, totalCents]
+      properties:
+        installmentNumber: { type: integer }
+        dueDate: { type: string }
+        principalCents: { type: integer }
+        interestCents: { type: integer }
+        totalCents: { type: integer }

@@ -1,0 +1,4 @@
+role: provider
+spec:
+  path: src/main/resources/openapi.yaml
+criticality: critical
